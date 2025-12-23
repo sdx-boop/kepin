@@ -1,0 +1,122 @@
+<script>
+let started = false;
+let hellLevel = 0;
+let hellTimer = null;
+let beepTimer = null;
+
+function brutalVibrate(times = 1){
+  if(!navigator.vibrate) return;
+  const pattern = [700,120,500,80,900,150,300,60,1200];
+  let c = 0;
+  const i = setInterval(()=>{
+    navigator.vibrate(pattern);
+    c++;
+    if(c >= times) clearInterval(i);
+  }, 2000);
+}
+
+function startBeep(){
+  const audio = document.getElementById("sound");
+  beepTimer = setInterval(()=>{
+    audio.currentTime = 0;
+    audio.play().catch(()=>{});
+  }, Math.random()*2000 + 800);
+}
+
+function stopBeep(){
+  if(beepTimer) clearInterval(beepTimer);
+}
+
+function escalateHell(){
+  hellLevel++;
+
+  // makin liar
+  document.body.classList.add("flash");
+
+  // teks makin serem
+  const t = document.getElementById("text");
+  const msgs = [
+    "SYSTEM ERROR",
+    "MENGAMBIL DATA...",
+    "MENGHAPUS FILE...",
+    "PERANGKAT TERKUNCI",
+    "KERUSAKAN KRITIS"
+  ];
+  t.innerText = msgs[Math.min(hellLevel, msgs.length-1)];
+
+  // getar makin brutal
+  brutalVibrate(hellLevel + 1);
+
+  // tampilkan error box
+  const box = document.getElementById("errorBox");
+  box.style.display = "block";
+
+  // fake progress
+  let p = document.getElementById("progress");
+  if(!p){
+    p = document.createElement("p");
+    p.id = "progress";
+    box.appendChild(p);
+  }
+  let percent = 0;
+  const prog = setInterval(()=>{
+    percent += Math.floor(Math.random()*12);
+    if(percent >= 100){
+      percent = 100;
+      clearInterval(prog);
+      p.innerText = "SELESAI.";
+    }else{
+      p.innerText = "Menghapus data... " + percent + "%";
+    }
+  }, 400);
+
+  // beep mulai di level 2
+  if(hellLevel === 2) startBeep();
+
+  // maksimal 4 level
+  if(hellLevel >= 4){
+    clearInterval(hellTimer);
+  }
+}
+
+// shake detector (Android)
+let lastX, lastY, lastZ, lastTime = 0;
+window.addEventListener("devicemotion", e=>{
+  const acc = e.accelerationIncludingGravity;
+  const now = Date.now();
+  if(!acc) return;
+
+  if(lastX !== null){
+    const speed = Math.abs(acc.x + acc.y + acc.z - lastX - lastY - lastZ)
+      / (now - lastTime) * 10000;
+
+    if(speed > 1200){
+      // digoyang → tambah chaos
+      brutalVibrate(2);
+      document.body.classList.toggle("flash");
+    }
+  }
+
+  lastTime = now;
+  lastX = acc.x; lastY = acc.y; lastZ = acc.z;
+});
+
+function startPrank(){
+  if(started) return;
+  started = true;
+
+  // fullscreen
+  const fs =
+    document.documentElement.requestFullscreen ||
+    document.documentElement.webkitRequestFullscreen;
+  if(fs) fs.call(document.documentElement);
+
+  // mulai neraka
+  brutalVibrate(1);
+  escalateHell();
+  hellTimer = setInterval(escalateHell, 3500);
+}
+
+document.addEventListener("click", startPrank);
+document.addEventListener("touchstart", startPrank);
+</script>
